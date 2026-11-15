@@ -1,0 +1,11 @@
+python-dotenv
+ddgs
+sentence-transformers
+scikit-learn
+numpy
+datasets
+streamlit
+tqdm
+fastapi
+uvicorn
+httpx
