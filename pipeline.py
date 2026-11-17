@@ -21,7 +21,12 @@ QUESTION: {query}
 ANSWER: {draft}"""
     out = llm_json(prompt, default={"claims": []})
     claims = out if isinstance(out, list) else out.get("claims", [])
-    return [c.strip() for c in claims if isinstance(c, str) and c.strip()]
+    claims = [c.strip() for c in claims if isinstance(c, str) and c.strip()]
+    # Flan-T5 often does not return JSON. Never let an empty extraction pass the
+    # answer unchecked: treat the whole draft as one claim.
+    if not claims and draft.strip():
+        claims = [draft.strip()]
+    return claims
 
 
 # ---------- 4. claim filtering ----------
@@ -55,26 +60,24 @@ def verify_claim(claim, use_search=True):
 SUP = evidence supports the claim.
 CON = evidence contradicts the claim.
 NEI = evidence is unrelated or not enough to decide.
-Return ONLY JSON: {{"verdict": "SUP|CON|NEI", "evidence_index": 1, "reason": "one short sentence"}}
+Answer with exactly one word: SUP, CON or NEI.
 
 CLAIM: {claim}
 EVIDENCE:
-{ev_text}"""
+{ev_text}
+ANSWER:"""
     else:                                   # ablation: no web evidence
         ev = []
         prompt = f"""Using only your own knowledge, is the CLAIM true?
 SUP = true, CON = false, NEI = you are not sure.
-Return ONLY JSON: {{"verdict": "SUP|CON|NEI", "reason": "one short sentence"}}
+Answer with exactly one word: SUP, CON or NEI.
 
-CLAIM: {claim}"""
-    out = llm_json(prompt, default={})
-    if not isinstance(out, dict):
-        out = {}
-    verdict = str(out.get("verdict", "NEI")).upper()
-    if verdict not in ("SUP", "CON", "NEI"):
-        verdict = "NEI"
-    return {"claim": claim, "verdict": verdict, "evidence": ev,
-            "reason": out.get("reason", "")}
+CLAIM: {claim}
+ANSWER:"""
+    # Flan-T5 answers in plain words, not JSON, so read the verdict word from the reply.
+    m = re.search(r"\b(SUP|CON|NEI)\b", llm(prompt).upper())
+    verdict = m.group(1) if m else "NEI"
+    return {"claim": claim, "verdict": verdict, "evidence": ev, "reason": ""}
 
 
 # ---------- 9. risk score ----------
