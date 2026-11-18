@@ -1,1 +1,33 @@
+# ---- secrets: never commit ----
 .env
+.env.*
+!.env.example
+*.pem
+*.key
+.streamlit/secrets.toml
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# ---- generated at runtime ----
+# DuckDuckGo search cache (rebuilt automatically)
+cache/
+# Proxy audit log; can contain questions/answers if LOG_CONTENT=true
+results/audit_log.jsonl
+
+# ---- third-party datasets: re-download with the commands in README.md ----
+data/
+
+# ---- editors / OS ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
